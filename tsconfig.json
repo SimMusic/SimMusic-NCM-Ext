@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "strict": false,
+    "target": "esnext",
+    "module": "commonjs"
+  }
+}
