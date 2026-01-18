@@ -1,13 +1,13 @@
 {
   "name": "simmusic-ncm-ext",
-  "version": "0.0.8-alpha.2+for.0.2.1",
+  "version": "0.0.8-alpha.3+for.0.2.1",
   "type": "module",
   "scripts": {
     "build": "vite build"
   },
   "devDependencies": {
-    "@types/node": "^22.5.0",
+    "@types/node": "^22.19.7",
     "fflate": "^0.8.2",
-    "vite": "^5.4.2"
+    "vite": "^7.3.1"
   }
 }

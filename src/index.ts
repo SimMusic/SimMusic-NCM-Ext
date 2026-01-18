@@ -114,7 +114,7 @@ SettingsPage.data.push(
 		type: 'boolean',
 		text: '启用自动解灰',
 		badges: ['Enhanced API'],
-		description: '自动解析无权播放的歌曲，但需要 Enhanced 版本的 API；建议在开启时关闭“过滤无效歌曲”一项。',
+		description: '自动解析无权播放的歌曲（仅支持标准音质），但需要 Enhanced 版本的 API；建议在开启时关闭“过滤无效歌曲”一项。',
 		configItem: 'ext.ncm.autoUnblock'
 	},
 	{
