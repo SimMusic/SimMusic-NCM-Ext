@@ -1,6 +1,9 @@
 # SimMusic NCM 扩展
 本项目是 [SimMusic](https://github.com/Simsv-Software/SimMusic2024-Windows) 的扩展，支持接入 `网易云 NodeJS API`。
 
+> [!NOTE]
+> 强烈建议使用 Enhanced 版本（非官方维护）的网易云 NodeJS API 以获取最佳体验。
+
 ## 提示
 目前本项目适配 SimMusic 0.2.1 版本，请勿跨版本使用。
 

@@ -72,6 +72,7 @@ Object.assign(defaultConfig, {
 	'ext.ncm.apiHeaders': '',
 	'ext.ncm.searchLimit': 30,
 	'ext.ncm.filterInvalid': true,
+	'ext.ncm.autoUnblock': false,
 	'ext.ncm.musicQuality': 'standard',
 	'ext.ncm.cacheEnabled': true,
 	'ext.ncm.maxCacheCount': 50,
@@ -108,6 +109,13 @@ SettingsPage.data.push(
 		text: '过滤无效歌曲',
 		description: '开启后搜索结果中将过滤您无法播放的歌曲。',
 		configItem: 'ext.ncm.filterInvalid'
+	},
+	{
+		type: 'boolean',
+		text: '启用自动解灰',
+		badges: ['Enhanced API'],
+		description: '自动解析无权播放的歌曲，但需要 Enhanced 版本的 API；建议在开启时关闭“过滤无效歌曲”一项。',
+		configItem: 'ext.ncm.autoUnblock'
 	},
 	{
 		type: 'select',
@@ -256,6 +264,8 @@ function getBr() {
 	return 10000000;
 }
 
+let currentPlaying: string;
+
 ExtensionConfig.ncm = {
 	async readMetadata(path: string) {
 		const id = path.substring(/* ncm: */ 4);
@@ -266,8 +276,18 @@ ExtensionConfig.ncm = {
 		return (await fetchMetadata(id))[id];
 	},
 
+	_cancelLoading() {
+		setTimeout(() => {
+			document.body.classList.remove('musicLoading');
+			if (currentPlaying) {
+				config.setItem('currentMusic', currentPlaying);
+			}
+		}, 300);
+	},
+
 	player: {
 		async getPlayUrl(path: string, isDownload: boolean, count: number = 0) {
+			currentPlaying = isDownload ? null : config.getItem('currentMusic');
 			const id = path.substring(/* ncm: */ 4);
 
 			const cached = getCache(id);
@@ -279,21 +299,39 @@ ExtensionConfig.ncm = {
 				return cachedPlayUrl[id].url;
 			}
 
-			const resp = await request('/song/url', { id, br: getBr() });
-			const obj = resp.data[0];
-			const url = obj.url;
-
-			// Max 5 retries
-			if (url == null) {
-				if (count >= 5) {
-					alert('获取播放地址失败，歌曲可能无法播放。', () => {
-						setTimeout(() => document.body.classList.remove('musicLoading'), 500);
-					});
-
-					return null;
+			let resp: any;
+			try {
+				resp = await request('/song/url', { id, br: getBr() });
+			} catch (err) {
+				// Max 3 retries
+				if (count >= 3) {
+					alert('获取播放地址时出现错误：' + err, ExtensionConfig.ncm._cancelLoading);
+					throw err;
 				}
 
 				return await this.getPlayUrl(path, isDownload, count + 1);
+			}
+
+			const obj = resp.data[0];
+			const url = obj.url;
+
+			if (url == null) {
+				if (config.getItem('ext.ncm.autoUnblock')) {
+					try {
+						const { data } = await request('/song/url/match', { id });
+						if (typeof data != 'string') {
+							throw 'API 不支持或需要更新版本。';
+						}
+
+						return data;
+					} catch (err) {
+						alert('自动解灰失败，建议尝试使用 VIP Token：' + err, ExtensionConfig.ncm._cancelLoading);
+						throw err;
+					}
+				}
+
+				alert('获取播放地址失败，歌曲可能无权播放。', ExtensionConfig.ncm._cancelLoading);
+				throw new Error('API 拒绝访问。');
 			}
 
 			if (!isDownload && config.getItem('ext.ncm.cacheEnabled')) {
